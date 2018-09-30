@@ -1,5 +1,6 @@
 import os
 import sys
+import random
 
 def read_from_console(): #reads the input provided by user on the console
     data = list()
@@ -97,20 +98,20 @@ def encode_sudoku(sudoku_data):
     #every number present in main diagonal only once
     for num in range(1,10):
         var_list=list()
-        for rowcol in range(1,10);
+        for rowcol in range(1,10):
             var_list.append(get_ind(rowcol,rowcol,num))
-        con=exactly_one()
+        con=exactly_one(var_list)
         for c in con:
             conditions.append(c)
 
     #every number present in other diagonal only once
     for num in range(1,10):
         var_list=list()
-        for rowcol in range(1,10);
+        for rowcol in range(1,10):
             var_list.append(get_ind(rowcol,10-rowcol,num))
-        con=exactly_one()
+        con=exactly_one(var_list)
         for c in con:
-            conditions.append(c)    
+            conditions.append(c)
 
     #Given input sudoku data
     for row in range(9):
@@ -130,7 +131,7 @@ def encode_sudoku(sudoku_data):
     fhand.close()
 
 def solve_sudoku():
-    os.system("minisat Sudoku_data Sudoku_solution")
+    os.system("minisat Sudoku_data Sudoku_solution > minisatlog")
     fhand=open("Sudoku_solution","r")
     solution=list()
     for i in range(9):
@@ -141,9 +142,9 @@ def solve_sudoku():
     sol=""
     for line in fhand:
         if line.strip() == "UNSAT":
-            print("SUDOKU NOT SOLVABLE")
+            return 0;
         elif line.strip() == "SAT":
-            print("SUDOKU SOLVED")
+            continue
         else:
             sol=line.strip()
 
@@ -155,10 +156,87 @@ def solve_sudoku():
 
     return solution
 
-data=read_from_console()
-encode_sudoku(data)
-solution_gen=solve_sudoku()
-for i in range(9):
-    for j in range(9):
-        print(solution_gen[i][j],end=" ")
-    print()
+def sudoku_solver():
+    data=read_from_console()
+    encode_sudoku(data)
+    solution_gen=solve_sudoku()
+    if solution_gen==0:
+        print("NO SOLUTION FOUND")
+    else:
+        print("SUDOKU SOLVED")
+        for i in range(9):
+            for j in range(9):
+                print(solution_gen[i][j],end=" ")
+            print()
+
+def num_solution(sudoku_data):
+    encode_sudoku(sudoku_data)
+    solution_gen=solve_sudoku()
+    if solution_gen==0:
+        return 0
+    fhand_read=open("Sudoku_data","r")
+    fhand_write=open("Sudoku_data2","w")
+    linenum=0
+    for line in fhand_read:
+        linenum=linenum+1
+        if linenum==1:
+            words=line.strip().split()
+            new_line=words[0]+" "+words[1]+" "+words[2]+" "+str(int(words[3])+1)
+            fhand_write.write(new_line+"\n")
+        else:
+            words=line.strip()
+            fhand_write.write(words+"\n")
+    fhand_read.close()
+    read_sol=open("Sudoku_solution","r")
+    linenum=0
+    for line in read_sol:
+        linenum=linenum+1
+        if linenum==1:
+            continue
+        else:
+            words=line.strip().split()
+            con_str=""
+            for word in words:
+                con_str=con_str+str(-1*int(word))+" "
+            fhand_write.write(con_str+"\n")
+    read_sol.close()
+    fhand_write.close()
+    os.system("minisat Sudoku_data2 Sudoku_solution2 > minisatlog")
+    final_output=open("Sudoku_solution2","r")
+    for line in final_output:
+        if line.strip()=="SAT":
+            final_output.close()
+            return 2
+        else:
+            final_output.close()
+            return 1
+
+def generate_sudoku():
+    sudoku=list()
+    for i in range(9):
+        sudoku.append(['*']*9)
+    while True:
+        randnum_gen=random.randint(1,729)
+        cell=get_cell(randnum_gen)
+        if sudoku[cell[0]-1][cell[1]-1]=='*':
+            sudoku[cell[0]-1][cell[1]-1]=cell[2]
+            sols=num_solution(sudoku)
+            if sols==0:
+                sudoku[cell[0]-1][cell[1]-1]='*'
+                continue
+            if sols==1:
+                for i in range(9):
+                    for j in range(9):
+                        print(sudoku[i][j],end=" ")
+                    print()
+                break
+            if sols==2:
+                continue
+        else:
+            continue
+
+if __name__ == "__main__":
+    if sys.argv[1]=="solve":
+        sudoku_solver()
+    if sys.argv[1]=="generate":
+        generate_sudoku()
