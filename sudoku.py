@@ -236,6 +236,11 @@ def generate_sudoku():
             continue
 
 if __name__ == "__main__":
+    if len(sys.argv) is not 2:
+        print("USAGE: either of")
+        print("python3 sudoku.py solve")
+        print("python3 sudoku.py generate")
+        exit()
     if sys.argv[1]=="solve":
         sudoku_solver()
     if sys.argv[1]=="generate":
