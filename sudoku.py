@@ -2,13 +2,17 @@ import os
 import sys
 import random
 
-def read_from_console(): #reads the input provided by user on the console
+def read_from_file(inp_file): #reads the input provided by user on the console
     data = list()
-    for i in range(9):
-        inp = input().split()
+    fhand=open(inp_file,"r")
+    i=0
+    for line in fhand:
+        data_line=line.strip()
         data.append(list())
         for j in range(9):
-            data[i].append(inp[j])
+            data[i].append(data_line[j])
+
+        i=i+1
 
     return data
 
@@ -116,7 +120,7 @@ def encode_sudoku(sudoku_data):
     #Given input sudoku data
     for row in range(9):
         for col in range(9):
-            if sudoku_data[row][col] == '*':
+            if sudoku_data[row][col] == '.':
                 continue
             else:
                 boolean_ind=get_ind(row+1,col+1,int(sudoku_data[row][col]))
@@ -137,7 +141,7 @@ def solve_sudoku():
     for i in range(9):
         solution.append(list())
         for j in range(9):
-            solution[i].append("*")
+            solution[i].append(".")
 
     sol=""
     for line in fhand:
@@ -155,19 +159,6 @@ def solve_sudoku():
             solution[cell[0]-1][cell[1]-1]=cell[2]
 
     return solution
-
-def sudoku_solver():
-    data=read_from_console()
-    encode_sudoku(data)
-    solution_gen=solve_sudoku()
-    if solution_gen==0:
-        print("NO SOLUTION FOUND")
-    else:
-        print("SUDOKU SOLVED")
-        for i in range(9):
-            for j in range(9):
-                print(solution_gen[i][j],end=" ")
-            print()
 
 def num_solution(sudoku_data):
     encode_sudoku(sudoku_data)
@@ -211,20 +202,48 @@ def num_solution(sudoku_data):
             final_output.close()
             return 1
 
+
+def sudoku_solver(inp_file):
+    data=read_from_file(inp_file)
+    encode_sudoku(data)
+    solution_gen=solve_sudoku()
+    if solution_gen==0:
+        print("NO SOLUTION FOUND")
+    else:
+        final_sols=num_solution(data)
+        print(final_sols)
+        if final_sols==2:
+            print("The sudoku had more than 1 solution, one of them is displayed below")
+        print("SUDOKU SOLVED")
+        for i in range(9):
+            for j in range(9):
+                print(solution_gen[i][j],end=" ")
+            print()
+
+
 def generate_sudoku():
     sudoku=list()
     for i in range(9):
-        sudoku.append(['*']*9)
+        sudoku.append(['.']*9)
     while True:
         randnum_gen=random.randint(1,729)
         cell=get_cell(randnum_gen)
-        if sudoku[cell[0]-1][cell[1]-1]=='*':
+        if sudoku[cell[0]-1][cell[1]-1]=='.':
             sudoku[cell[0]-1][cell[1]-1]=cell[2]
             sols=num_solution(sudoku)
             if sols==0:
-                sudoku[cell[0]-1][cell[1]-1]='*'
+                sudoku[cell[0]-1][cell[1]-1]='.'
                 continue
             if sols==1:
+                for i in range(9):
+                    for j in range(9):
+                        num_present=sudoku[i][j]
+                        if sudoku[i][j] is not '.' :
+                            sudoku[i][j]='.'
+                            final_sol=num_solution(sudoku)
+                            if final_sol is not 1:#if num of sols is not 1 the number is reinserted
+                                sudoku[i][j]=num_present
+
                 for i in range(9):
                     for j in range(9):
                         print(sudoku[i][j],end=" ")
@@ -236,12 +255,16 @@ def generate_sudoku():
             continue
 
 if __name__ == "__main__":
-    if len(sys.argv) is not 2:
+    if len(sys.argv) < 2:
         print("USAGE: either of")
         print("python3 sudoku.py solve")
         print("python3 sudoku.py generate")
         exit()
     if sys.argv[1]=="solve":
-        sudoku_solver()
+        if len(sys.argv)<3:
+            print("please provide input file")
+        else:
+            inp_file=sys.argv[2]
+            sudoku_solver(inp_file)
     if sys.argv[1]=="generate":
         generate_sudoku()
